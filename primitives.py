@@ -65,6 +65,23 @@ def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
     # Return the binary image
     return binary_output
 
+def select_yellow(image):
+ hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+ lower = np.array([20,60,60])
+ upper = np.array([38,174, 250])
+ mask = cv2.inRange(hsv, lower, upper)
+ res = cv2.bitwise_and(image,image, mask= mask)
+
+ return mask
+
+def select_white(image):
+ lower = np.array([202,202,202])
+ upper = np.array([255,255,255])
+ mask = cv2.inRange(image, lower, upper)
+ res = cv2.bitwise_and(image,image, mask= mask)
+ 
+ return mask
+
 # Edit this function to create your own pipeline.
 def transform_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     img = np.copy(img)
@@ -81,6 +98,10 @@ def transform_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     sxbinary = np.zeros_like(scaled_sobel)
     sxbinary[(scaled_sobel >= sx_thresh[0]) & (scaled_sobel <= sx_thresh[1])] = 1
     
+    sx_yellow = select_yellow(img)
+    sx_white = select_white(img)
+     
+
     # Threshold color channel
     s_binary = np.zeros_like(s_channel)
     s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
@@ -89,7 +110,10 @@ def transform_pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     # be beneficial to replace this channel with something else.
     color_binary = np.dstack(( np.zeros_like(sxbinary), sxbinary, s_binary))
     combined_binary =  np.zeros_like(sxbinary)
-    combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
+    #combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
+    combined_binary[(sx_yellow > 0 ) | (sx_white == 1) | (s_binary == 1) |(sxbinary == 1)] = 1
+    #combined_binary[(sx_yellow > 0)] = 1
+    #return combined_binary
     return combined_binary
 
 def region_of_interest(img, vertices):
